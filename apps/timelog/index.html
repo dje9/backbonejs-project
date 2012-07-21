@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+  
+  <head>
+    <title>Timelog</title>
+    <link rel="stylesheet" href="/timelog/style/screen.css"
+    media="screen, projection">
+
+  <!-- Templates -->
+
+    <script type="text/template" id="date-title-template">
+      <h1><%= formatDateAsTitle(date) %></h1>
+    </script>
+
+    <script type="text/template" id="elapsed-clock-template">
+      <div class="elapsed">
+        <time class="elapsed-duration"><%= app.Util.formatSecondsAsTime(elapsedSeconds) %></time> has elapsed
+      </div>
+    </script>
+
+    <script type="text/template" id="clocks-template">
+      <div class="total-clock">
+        <time class="total-duration"><%= app.Util.formatSecondsAsTime(duration) %></time>
+        <div class="total-time">Total</div>
+      </div>
+
+      <% _.each(tagReports, function(tagReport) { %>
+      <div class="tag-clock">
+        <time class="total-duration"><%= app.Util.formatSecondsAsTime(tagReport.duration) %></time>
+        <div class="tag"><%= tagReport.name %></div>
+      </div>
+      <% }); %>
+    </script>
+
+    <script type="text/template" id="completed-task-template">
+      <div class="duration"><%= app.Util.formatSecondsAsTime(duration) %></div>
+      <input class="is-done" type="checkbox" checked />
+      <div class="title-done"><%= app.Util.escapeHTML(title) %></div>
+      <div class="tag"><%= tag %></div>
+    </script>
+
+    <script type="text/template" id="incomplete-task-template">
+      <input class="is-done" type="checkbox" />
+      <div class="title"><%= app.Util.escapeHTML(title) %></div>
+      <a class="edit" title="Edit">&nbsp;</a>
+      <a class="destroy" title="Destroy">&times;</a>
+      <div class="tag"><%= tag %></div>
+    </script>
+
+    <script type="text/template" id="undo-template">
+      <div class="undo-button">UNDO</div> 
+      <div class="title"><%= title %></div>
+      <div class="tag"><%= tag %></div>
+    </script>
+
+    <script type="text/template" id="blank-state-template">
+      <p class="message-blank">
+        <button class="start-tracking" type="Submit">Start</button> tracking my time
+      </p>
+    </script>
+
+    <script type="text/template" id="tasks-template">
+      <!-- CompletedTasksView -->
+
+      <!-- ClocksView -->
+
+      <!-- ElapsedClockView -->
+
+      <!-- TasksToCompleteView -->
+    </script>
+
+    <script type="text/template" id="new-task-template">
+      <div class="type"></div><input id="new-task" type="text" placeholder="Type a new task..." />
+      <div id="warning">Your task is blank! Please type something you want to do.</div>
+    </script>
+
+    <script type="text/template" id="menu-template">
+      <a class="previous">Previous</a> &nbsp;
+      <a class="today">Today</a> &nbsp;
+      <a class="next">Next</a>
+    </script>
+
+  </head>
+  
+  <body>
+    <div id="container"></div>
+    <script src="/js/modernizr-1.6.min.js"></script>
+    <script src="/js/jquery-1.5.1.min.js"></script>
+    <script src="/js/underscore.js"></script>
+    <script src="/js/backbone.js"></script>
+    <script src="/js/socket.io.min.js"></script>
+    <script src="/js/assets.js"></script>
+
+    <script src="/timelog/util.js"></script>
+    <script src="/timelog/time-log.js"></script>
+
+  
+  </body>
+  <html>
