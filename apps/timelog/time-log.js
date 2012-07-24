@@ -2,54 +2,82 @@ function formatDateAsTitle(date) {
   return date.toLocaleDateString();
 }
 
+function formatSecondsAsTime(seconds) { 
+
+    var secondsInt = parseInt(seconds, 10);
+    var hours = parseInt(secondsInt / 60 / 60, 10);
+    var minutes = parseInt((secondsInt / 60) % 60, 10);
+
+    var hoursString = '';    
+    if(hours > 0)
+        hoursString = hours;
+    else
+        hoursString = '0';
+
+    var minutesString = '';    
+    if(minutes > 9)
+        minutesString = minutes;
+    else
+        minutesString = '0' + minutes;
+
+    return hoursString + ':' + minutesString;
+}
+
+function escapeHTML(string) {
+    string.replace(/&(?!\w+;|#\d+;|#x[\da-f]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;');
+
+}
+
 
 window.Task = Backbone.Model.extend({
-    tag: '',
-    url: function () {
-      var url = '';
-      if (this.id !== undefined && this.id !== null) url = '/timelog/api/tasks/' + this.id;
-      else url = '/timelog/api/tasks/';
-      return url;
-    },  
-  initialize: function(attributes, options) {
-    if (!attributes.createdAt)
-      this.attributes.createdAt = new Date().toDateString();
-    if (tag = this.extractTag(attributes.title))
-      this.attributes.tag = tag
-    else
-      this.attributes.tag = null
-    this.bind('change:title', this.updateTag, this);
-    },
-  validate: function(attributes){    
-    var mergedAttributes = _.extend(_.clone(this.attributes), attributes);
-    if (!mergedAttributes.title || mergedAttributes.title.trim() === '')
-      return("Task title must not be blank.");
-      },
-  updateTag: function(model, newTitle) {
-    var tag = this.extractTag(newTitle);
-    if(tag)
-      this.set({tag:tag});
-    else
-      this.set({tag:null});
+  url: function () {
+    var url = '';
+    if (this.id !== undefined && this.id !== null) url = '/timelog/api/tasks/' + this.id;
+    else url = '/timelog/api/tasks/';
+    return url;
   },
-  extractTag: function(text){
-    if(this.attributes.title)
-      var matches = this.attributes.title.match(/\s#(\w+)/);
-     // if(matches.length > 0)
-       // return matches[1];
+  initialize: function (attributes, options) {
+    console.log('Task:initialize');
+    console.log(attributes);
+    console.log(options);
 
-    return '';
-    },  
+    if (!this.createdAt) this.createdAt = new Date(options.collection.year, options.collection.month, options.collection.day).toDateString();
+    if (!this.title) this.title = attributes.title;
+    if (!this.id) this.id = '';
+    if (!this.tag) this.tag = '';
+
+    var tag = this.title;
+
+    if (this.tag === this.extractTag(this.title)) this.tag = tag
+    else this.tag === null
+    this.bind('change:title', this.updateTag, this);
+  },
+  validate: function (attributes) {
+    var mergedAttributes = _.extend(_.clone(this.attributes), attributes);
+    if (!mergedAttributes.title || mergedAttributes.title.trim() === '') return ("Task title must not be blank.");
+  },
+  updateTag: function (model, newTitle) {
+    var tag = this.extractTag(newTitle);
+    if (tag) this.set({
+      tag: tag
+    });
+    else this.set({
+      tag: null
+    });
+  },
+  extractTag: function (text) {
+    if (this.title) var matches = this.title.match(/\s#(\w+)/);
+    if(matches) return matches[1];
+    else return '';
+  },
   markComplete: function () {
-    var completedAt = (new Date).getTime();
+    var completedAt = new Date().getTime();
     var duration = 0;
-    var length = this.collection.completedTasks().length;
-    if (this.collection) var mostRecentCompletedTask = this.collection.completedTasks()[length - 1];
-    if (mostRecentCompletedTask) {
-      var durationInMilliseconds = (completedAt - mostRecentCompletedTask.get('completedAt'));
-      var floatDurationSeconds = durationInMilliseconds / 1000;
-      duration = parseInt(floatDurationSeconds, 10);
-    }
+    var durationInMilliseconds = completedAt - 100;
+    var floatDurationSeconds = durationInMilliseconds / 1000;
+    
+    duration = parseInt(floatDurationSeconds, 10);
+     
     this.set({
       completedAt: completedAt,
       duration: duration
@@ -62,14 +90,12 @@ window.Task = Backbone.Model.extend({
     });
   },
   isCompleted: function () {
-
-    return this.attributes.completedAt;
-  }
+    return this.completedAt;
+  }, 
 });
 
 window.Tasks = Backbone.Collection.extend({
   model: window.Task,
-  url: '/timelog/api/tasks',
   initialize: function (options) {
     this.bind('destroy', this.willDestroyTask, this);
   },
@@ -91,58 +117,75 @@ window.Tasks = Backbone.Collection.extend({
     console.log('change:date triggered');
   },
   hasStarted: function () {
-    var completedTasks = this.completedTasks();
+   if (this.completeTasks.length <= 0) return false; 
+   for (var task in this.completeTasks)
+      if (this.completeTasks[task].title === 'Start') return true
+ 
+    return false;
+  },
+  completeTasks: [],
+  incompleteTasks: [],
+  createStartTask: function () {    
+    var task = this.create({ title: 'Start', completedAt: new Date().getTime(), duration: 0 });
+    this.completeTasks.push (task);
+    console.log('triggering start');
+    this.trigger('start', this);
+
+  },
+  secondsSinceLastTaskWasCompleted: function () {
+    var currentTime = new Date().getTime();  
+    var last = this.completeTasks.length - 1;  
+    var lastTask = this.completeTasks[last];
+    if(!lastTask) return 0;
+
+    var lastCompletedTime = lastTask.completedAt;
+    var millisecondsSince = currentTime - lastCompletedTime;
+    var secondsSince = millisecondsSince / 1000;
+    return secondsSince;
+  },
+  tagReports: function () {
     
-    if (completedTasks.length === 0) return false;
+    var tagReports = { other: { name:'other', duration:0 } };
 
-    for (var task in completedTasks)
-      //if (completedTasks[task].title === 'Start') return true
+    for(var task in this.completeTasks) { 
+      var tag = task.get('tag');
+      var duration = task.get('duration');
+      
+      if(task.isCompleted() && duration)
+        if(tag) {
+          if(tagReports[tag]) tagReports[tag].duration += duration;
+          else
+            tagReports[tag] = { name:tag, duration: duration };
+        }
+        else
+          tagReports.other.duration += task.get('duration');
+    return tagReports;
+    }
 
-    return false
+    if (tagReports.other.duration === 0)  delete(tagReports.other);
+    _.sortBy(tagReports, function (tagReport) { 
+      return tagReport.duration 
+    });
   },
-  completedTasks: function () {
-    tasks = [{
-      title: 'Save yourself'
-    }];
-    return tasks;
-  },
-  incompleteTasks: function () {
-    tasks = [{
-      title: 'Save noone'
-    }];
-    return tasks;
-  },
-  createStartTask: function () {
-    var attributes = {
-      title: 'Start',
-      completedAt: new Date().getTime(),
-      duration: 0
-    };
-    var options = {
-      success: function () {
-        console.log('triggering start');
-        this.trigger('start', this);
-      },
-      error: function () {
-        alert('fail');
-      },
-    };
-    this.create(attributes, options);
-  },
-
-  tagReports: function () {},
   metaData: {
     date: new Date(),
     duration: this.duration,
     tagReports: this.tagReports
   },
-  goToPreviousDate: function () {},
-  gotToNextDate: function () {},
+  goToPreviousDate: function () {
+    var date = new Date();
+    date.setDate(this.currentDate().getDate() - 1);
+    this.setDate(date);
+  },
+  goToNextDate: function () {
+    var date = new Date();
+    date.setDate(this.currentDate().getDate() + 1);
+    this.setDate(date);
+  },
   isToday: function () {
     var date = this.currentDate();
     var today = new Date();
     var isTrue = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
-    //console.log(isTrue);
     return !isTrue;
   },
   duration: function () {
@@ -152,7 +195,7 @@ window.Tasks = Backbone.Collection.extend({
     return durationSeconds;
   },
   currentDate: function () {
-    var date = new Date(this.year, this.month - 1, this.day);
+    var date = new Date(this.year, this.month, this.day);
     return date;
   },
 
@@ -171,14 +214,7 @@ window.Tasks = Backbone.Collection.extend({
   undoItem: function () {
     return this.undoAttributes;
   },
-
-
 });
-
-//window.tasks = new Tasks();
-//window.tasks.add({
- // title: 'Save the princess'
-//});
 
 window.UndoView = Backbone.View.extend({
   tagName: 'li',
@@ -197,36 +233,42 @@ window.UndoView = Backbone.View.extend({
   }
 });
 
-
-
-
-window.CompletedTaskView = Backbone.View.extend({
-  tagName: 'ul',
+window.CompletedTasksView = Backbone.View.extend({
   id: 'completed-tasks',
-  initialize: function () {
+  tagName: 'ul',  
+  initialize: function (options) {
+    this.collection = options;
+
     this.collection.bind('add', this.render, this);
     this.collection.bind('change', this.render, this);
     this.collection.bind('remove', this.render, this);
   },
-  render: function () {
-    $(this.el).empty();
+  render: function () {  
+    console.log('CompletedTasksView:render');
+    console.log(this.collection);
 
-    for (var task in this.collection.completedTasks()) {
-      var completedTaskView = new CompletedTaskView({ model: task });
-      $(this.el).append(completedTaskView.render().el);
-      if (this.collection.completedTasks().length === 1) completedTaskView.disable();
-      else {
-        var length = this.collection.completedTasks().length;
+    $(this.el).empty();       
+    var index;
+    var completeTasks = this.collection.completeTasks;
+    var length = completeTasks.length;
 
-        if (task === this.collection.completedTasks()[length - 1]) completedTaskView.enable();
+    for(index = 0; index < length; index++)
+    {
+      var model = completeTasks[index];
+      var completedTaskView = new CompletedTaskView();
+      $(this.el).append(completedTaskView.render(model).el);
+      if (this.collection.completeTasks.length === 1) 
+          completedTaskView.disable();
+      else 
+      {
+        var length = this.collection.completeTasks.length;
+        if (task === this.collection.completedTasks[length - 1]) 
+          completedTaskView.enable();
         else completedTaskView.disable();
       }
-    }
-
+    } 
     return this;
   }
-
-
 });
 
 window.CompletedTaskView = Backbone.View.extend({
@@ -236,22 +278,52 @@ window.CompletedTaskView = Backbone.View.extend({
   events: {
     'click input.is-done': 'markComplete'
   },
-  render: function () {
-    $(this.el).html(this.template(this.model.toJSON()));  
+  render: function (options) {
+    this.model = options;
+
+    $(this.el).html(this.template(this.model));
     return this;
   },
   markComplete: function () {
-    //if ($('.is-done').prop('checked')) this.model.markComplete()
-    //else this.model.markIncomplete()
+    if ($('.is-done').prop('checked')) this.model.markComplete()
+    else this.model.markIncomplete()
     this.model.save()
   },
   disable: function () {
-    //$('input').prop('disabled', true);
+   //$('input').prop('disabled', true);
   },
   enable: function () {
    // $('input').prop('disabled', false);
   }
+});
 
+window.IncompleteTasksView = Backbone.View.extend({ 
+  tagName: 'ul',
+  id: 'tasks-to-complete',
+  initialize: function (options) {
+    this.collection = options;
+
+    this.collection.bind('add', this.render, this);
+    this.collection.bind('change', this.render, this);
+    this.collection.bind('destroy', this.render, this);
+  },
+  render: function () {    
+    $(this.el).empty();     
+    var incompleteTasks = this.collection.incompleteTasks;
+    var length = incompleteTasks.length
+    var index;
+    for(index = 0; index < length; index++) {
+        var model = incompleteTasks[index];        
+        var incompleteTaskView = new window.IncompleteTaskView();
+        $(this.el).append(incompleteTaskView.render(model).el);     
+       }
+    
+        if (this.collection.undoItem()) {
+          var undoView = new UndoView({ collection: this.collection });
+          $(this.el).append(undoView.render().el);
+      }    
+    return this;
+  }
 
 });
 
@@ -265,94 +337,83 @@ window.IncompleteTaskView = Backbone.View.extend({
     'click .edit': 'edit',
     'keypress .edit-task': 'saveOnEnter'
   },
-  render: function () {
-    $(this.el).html(this.model.toJSON());  
+  render: function (options) {
+    this.model = options;
+    console.log('InCompleteTaskView:render');
+    console.log(this.model);
+    $(this.el).html(this.template(this.model));
     return this;
   },
-  markComplete: function(){
-      if($('.is-done').attributes('checked'))
-        this.model.markComplete();
-      else
-        this.model.markIncomplete();
-      this.model.save();
+  markComplete: function () {
+    if ($('.is-done').attributes('checked')) this.model.markComplete();
+    else this.model.markIncomplete();
+    this.model.save();
   },
-  edit: function(){
-      $(this.el).html(this.make('input', { type:'text', class: 'edit-task', value: this.model.get('title')}));
-      $('.edit-task').focus();
- },
-   saveOnEnter: function(event) {
-      if(event.keyCode === 13){ 
-        this.model.save( {title: $('.edit-task').val()});
-        this.render();
-        }
-   },
-  destroy: function(){
-      this.model.destroy();
-      },
-
-});
-
-window.IncompleteTaskView = Backbone.View.extend({
-  tagName: 'ul',
-  id: 'tasks-to-complete',
-  initialize: function () {
-    //this.collection.bind('add', this.render, this);
-    //this.collection.bind('change', this.render, this);
-   // this.collection.bind('destroy', this.render, this);
+  edit: function () {
+    $(this.el).html(this.make('input', {
+      type: 'text',
+      class: 'edit-task',
+      value: this.model.get('title')
+    }));
+    $('.edit-task').focus();
   },
-  render: function () {   
-    $(this.el).empty();
-    
-    var incompleteTasks = this.collection.incompleteTasks();
-    var i;
-    for (i = 0; i < incompleteTasks.length; i++){
-        var incompleteTaskView = new IncompleteTaskView({ model: new Task({title:'Save me' })});
-      $(this.el).append(incompleteTaskView.render().el);
+  saveOnEnter: function (event) {
+    if (event.keyCode === 13) {
+      this.model.save({
+        title: $('.edit-task').val()
+      });
+      this.render();
     }
-    if (this.collection.undoItem()) {
-      var undoView = new UndoView({collection: this.collection });
-      $(this.el).append(undoView.render().el);
-    }
-
-    return this;
-  }
-
+  },
+  destroy: function () {
+    this.model.destroy();
+  },
 
 });
 
 window.DateTitleView = Backbone.View.extend({
   template: _.template($('#date-title-template').html()),
-  render: function () {
+  render: function (options) {
+    this.collection = options;
+
     $(this.el).html(this.template(this.collection.metaData));
     return this;
   }
-
 });
 
 window.ElapsedClockView = Backbone.View.extend({
-    className: 'elapsed-clock',
-    template: _.template($('#elapsed-clock-template').html()),
-    initialize: function(){
-      this.collection.bind('change', this.render, this);
-    },
-    render: function(){
-      $(this.el).html(this.template( { elapsedSeconds: this.collection.secondsSinceLastTaskWasCompleted() } ));
-      return this;
-      }
+  className: 'elapsed-clock',
+  template: _.template($('#elapsed-clock-template').html()),
+  initialize: function (options) {
+    this.collection = options;
+
+    this.collection.bind('change', this.render, this);
+  },
+  render: function () {
+    console.log('ElapsedClocksView:render');
+    console.log(this.collection);
+    $(this.el).html(this.template({ elapsedSeconds: this.collection.secondsSinceLastTaskWasCompleted() }));
+    return this;
+  }
 });
 
 window.ClocksView = Backbone.View.extend({
-    className: 'clocks',
-    template: _.template($('#clocks-template').html()),
-    initialize: function(){
-      this.collection.bind('change', this.render, this);
-     },
-    render: function(){
-      $(this.el).html(this.template(this.collection.metaData()));
-      return this;
-    }
+  className: 'clocks',
+  template: _.template($('#clocks-template').html()),
+  initialize: function (options) {
+    this.collection = options;
+
+    this.collection.bind('change', this.render, this);
+  },
+  render: function () {
+    console.log('ClocksView:render');
+    console.log(this.collection);
+    $(this.el).html(this.template(this.collection.metaData));
+    return this;
+  }
 });
-      
+
+
 window.TasksView = Backbone.View.extend({
   className: 'tasks',
   template: _.template($('#tasks-template').html()),
@@ -360,48 +421,54 @@ window.TasksView = Backbone.View.extend({
   events: {
     'click .start-tracking': 'startTracking'
   },
-  initialize: function (options) {   
+
+  initialize: function (options) {
+    this.collection = options;
+   
     this.completedSubviews = [
-        new CompletedTaskView({collection: this.collection, model: window.Task}),
-        //new ClocksView({collection: this.collection}),
-        //new ElapsedClockView({collection: this.collection})
-    ];
+      new CompletedTasksView(this.collection),
+      new ClocksView(this.collection),
+      new ElapsedClockView(this.collection),
+      ];
     this.incompleteSubviews = [
-      //new IncompleteTaskView({ collection: this.collection })
+     new IncompleteTasksView(this.collection)
     ];
+
     //this.collection.bind('start', this.render, this);
-  },
-  startTracking: function () {
-      
+    },
+
+    startTracking: function () {
       this.collection.createStartTask();
       $('#new-task').val('').focus();
-  },
-  render: function () {
-     if(this.collection.hasStarted()){
+    },
+
+    render: function (options) {
+      this.collection = options;
+
+      console.log('TasksView:render');      
+      console.log(this);
+              
+      if(this.collection.hasStarted()) {   
         $(this.el).html(this.template());
-            for (var subviews in this.completedSubviews){
-              $(this.el).append(this.completedSubviews[subviews].render().el);
-              if(this.collection.isToday())
-                $('.elapsed-clock').show();
-              else
-                $('.elapsed-clock').hide();
-            }
+        for (var subviews in this.completedSubviews) {
+          $(this.el).append(this.completedSubviews[subviews].render().el);
+          if (this.collection.isToday()) $('.elapsed-clock').show();
+          else $('.elapsed-clock').hide();
+        }
+      } 
+      else
+     {
+        $(this.el).html(this.blankStateTemplate);
+        if ( this.collection.isToday()) $('.message-blank').text('No tasks were tracked on this day.');
      }
-     else {
-        $(this.el).html(this.blankStateTemplate());
-        if(this.collection.isToday())
-          $('.message-blank').text('No tasks were tracked on this day.');
-    }
-
-      for (var subviews in this.incompleteSubviews)
-        $(this.el).append(this.incompleteSubviews[subviews].render().el);  
-
-      if(!this.collection.hasStarted()) $('.is-done').hide();
-      this.delegateEvents();
       
-    return this;
-  }
+      for (var subviews in this.incompleteSubviews)
+        $(this.el).append(this.incompleteSubviews[subviews].render().el);
 
+      if (!this.collection.hasStarted()) $('.is-done').hide();
+     
+      return this;
+    }
 });
 
 window.MenuView = Backbone.View.extend({
@@ -412,7 +479,9 @@ window.MenuView = Backbone.View.extend({
     'click .today': 'goToToday',
     'click .next': 'goToNextDate'
   },
-  render: function () {
+  render: function (options) {
+    this.collection = options;
+
     $(this.el).html(this.template);
     this.delegateEvents();
     return this;
@@ -428,8 +497,6 @@ window.MenuView = Backbone.View.extend({
   }
 });
 
-
-
 window.NewTaskView = Backbone.View.extend({
   tagName: 'form',
   events: {
@@ -440,8 +507,10 @@ window.NewTaskView = Backbone.View.extend({
   initialize: function () {
     _.bindAll(this, 'render');
   },
-  render: function () {
-    if (this.collection.isToday()) {
+  render: function (options) {
+   this.collection = options;
+
+   if(this.collection.isToday()) {
       $(this.el).html(this.template);
       this.delegateEvents();
     } else $(this.el).empty();
@@ -454,10 +523,9 @@ window.NewTaskView = Backbone.View.extend({
   hideWarning: function () {
     $('#warning').hide();
   },
-  flashWarning: function (model, err) {
-    console.log(err);
+  flashWarning: function () {
     $('#warning').fadeOut(100);
-    $('#warning').fadeIn(400);
+    $('#warning').fadeIn(400);    
   },
   resetUndo: function () {
     this.undoAttributes = null;
@@ -465,65 +533,37 @@ window.NewTaskView = Backbone.View.extend({
   saveOnEnter: function (event) {
     console.log('saveOnEnter triggered');
     if (event.keyCode === 13) {
-      event.preventDefault();
-      var attributes = {
-        title: $('#new-task').val()
-      };
-      var options = {
-        error: function (err) {
-          alert(err);
-        } //this.flashWarning
-      };
+      event.preventDefault(); 
 
-      var task = this.collection.create(attributes, options);
+      var title = $('#new-task').val();
+      if(title.length === 0 ) this.flashWarning();
 
+      var task = this.collection.create( { title: title  } );
       console.log(task);
-
-      if (task !== undefined) {
-        this.hideWarning();
-        this.focus();
-      }
-
+      this.collection.incompleteTasks.push(task);  
+      //this.collection.trigger('add');  
+      this.focus();
     }
-
-
   }
-
 });
 
-
-
 window.AppView = Backbone.View.extend({
-  subviews: [
-  new MenuView({
-    collection: this.collection
-  }),
-  new DateTitleView({
-    collection: this.collection
-  }),
-  new TasksView({
-    collection: this.collection
-  }),
-  new NewTaskView({
-    collection: this.collection
-  })],
   initialize: function (options) {
-    this.collection.bind('refresh', this.render, this);
+    this.collection = options;
+
+    this.subviews = [  new MenuView(),
+                       new DateTitleView(), 
+                       new TasksView(this.collection), 
+                       new NewTaskView() 
+                    ];
   },
   render: function () {
     $(this.el).empty();
     for (var subview in this.subviews)
-      $(this.el).append(this.subviews[subview].render().el);
+    $(this.el).append(this.subviews[subview].render(this.collection).el);
     return this;
   }
-
 });
-
-
-window.tasks = new window.Tasks()
-tasks.add({title: 'Save the princess'});
-tasks.add({title: 'Save the prince'});
-
 
 
 window.TimelogRouter = Backbone.Router.extend({
@@ -533,7 +573,10 @@ window.TimelogRouter = Backbone.Router.extend({
   },
 
   initialize: function () {
-
+    this.tasks = new window.Tasks();
+     //this.tasks.completeTasks.push( { title: 'Start', completedAt: new Date().getTime(), duration: 0, tag: '' });
+     this.tasks.incompleteTasks.push( { title: 'Start', completedAt: new Date().getTime(), duration: 0, tag: '' });
+    this.appView = new AppView(this.tasks);
   },
 
   redirectToToday: function () {
@@ -541,24 +584,17 @@ window.TimelogRouter = Backbone.Router.extend({
     var day = today.getDate();
     var month = today.getMonth() + 1;
     var year = today.getFullYear();
-    //Backbone.history.navigate('tasks' + '/'+year+'/'+month+'/'+day, true);
-
-      
-    var appView = new AppView({
-      collection: window.tasks
-    });
-
-    $('#container').append(appView.render().el);
+    Backbone.history.navigate('tasks' + '/'+year+'/'+month+'/'+day, true);  
   },
+
   show: function (year, month, day) {
-    window.tasks.setDate(year, month, day);
+    this.tasks.setDate(year, month, day);   
+    $('#container').append(this.appView.render().el);
   }
 });
-
 
 window.app = new TimelogRouter();
 
 $(function () {
-
   Backbone.history.start();
 });

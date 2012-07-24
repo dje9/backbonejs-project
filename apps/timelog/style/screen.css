@@ -314,12 +314,12 @@ li {
       letter-spacing: 2px;
       color: #fefefe; }
 
-#new-task, .edit-task {
+#new-task, .edit-task {  
   font-size: 1em;
   font-family: Georgia;
   color: #535353;
   background-color: #fefefe;
-  border: 1px dotted #777777;
+  border: 1px solid #777777;
   padding: 5px; }
 
 #warning {

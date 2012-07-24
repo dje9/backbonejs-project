@@ -18,14 +18,6 @@ body {
     padding: 0 2%;
 }
 
-.album {
-    list-style: none;
-    display: inline-block;
-    position: relative;
-    width: 80%;
-    margin: 0;
-    padding: 1em 2em;
-}
 
 .album .artist-name {
 }
@@ -54,13 +46,14 @@ body {
     min-height: 100%;
 }
 
-nav {
-    width: 180px;
+div.questionaire {
+    /*width: 180px;*/
     margin: auto;
     padding: 0;
+    border: 1px dashed green;
 }
 
-nav button.control {
+div button.vote {
     text-indent: -9999px;
     width: 55px;
     height: 50px;
@@ -70,37 +63,16 @@ nav button.control {
     background: transparent;
     cursor: pointer;
 }
-
-nav button.play {
-    background: url('/album/images/control_play.png') center no-repeat;
+div button.false:hover {
+    background: url('/votingdevice/images/true.png') center no-repeat;
+}
+div button.true:hover {
+    background: url('/votingdevice/images/true.png') center no-repeat;
 }
 
-nav button.play:hover {
-    background: url('/album/images/control_play_hover.png') center no-repeat;
-}
-
-nav button.pause {
-    background: url('/album/images/control_pause.png') center no-repeat;
-}
-
-nav button.pause:hover {
-    background: url('/album/images/control_pause_hover.png') center no-repeat;
-}
-
-nav button.prev {
-    background: url('/album/images/control_start.png') center no-repeat;
-}
-
-nav button.prev:hover {
-    background: url('/album/images/control_start_hover.png') center no-repeat;
-}
-
-nav button.next {
-    background: url('/album/images/control_end.png') center no-repeat;
-}
-
-nav button.next:hover {
-    background: url('/album/images/control_end_hover.png') center no-repeat;
+.questionaire .text {
+    display: inline-block;
+    color: red;
 }
 
 .playlist .album .queue.add {

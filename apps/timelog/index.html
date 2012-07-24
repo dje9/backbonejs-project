@@ -14,34 +14,35 @@
 
     <script type="text/template" id="elapsed-clock-template">
       <div class="elapsed">
-        <time class="elapsed-duration"><%= app.Util.formatSecondsAsTime(elapsedSeconds) %></time> has elapsed
+        <time class="elapsed-duration"><%= formatSecondsAsTime(elapsedSeconds) %></time> has elapsed
       </div>
     </script>
 
     <script type="text/template" id="clocks-template">
       <div class="total-clock">
-        <time class="total-duration"><%= app.Util.formatSecondsAsTime(duration) %></time>
+        <time class="total-duration"><%= formatSecondsAsTime(duration) %></time>
         <div class="total-time">Total</div>
       </div>
 
       <% _.each(tagReports, function(tagReport) { %>
       <div class="tag-clock">
-        <time class="total-duration"><%= app.Util.formatSecondsAsTime(tagReport.duration) %></time>
+        <time class="total-duration"><%= formatSecondsAsTime(tagReport.duration) %></time>
+
         <div class="tag"><%= tagReport.name %></div>
       </div>
       <% }); %>
     </script>
 
     <script type="text/template" id="completed-task-template">
-      <div class="duration"><%= app.Util.formatSecondsAsTime(duration) %></div>
+      <div class="duration"><%= formatSecondsAsTime(duration) %></div>
       <input class="is-done" type="checkbox" checked />
-      <div class="title-done"><%= app.Util.escapeHTML(title) %></div>
+      <div class="title-done"><%= title %></div>
       <div class="tag"><%= tag %></div>
     </script>
 
     <script type="text/template" id="incomplete-task-template">
       <input class="is-done" type="checkbox" />
-      <div class="title"><%= app.Util.escapeHTML(title) %></div>
+      <div class="title"><%= title %></div>
       <a class="edit" title="Edit">&nbsp;</a>
       <a class="destroy" title="Destroy">&times;</a>
       <div class="tag"><%= tag %></div>
@@ -70,7 +71,7 @@
     </script>
 
     <script type="text/template" id="new-task-template">
-      <div class="type"></div><input id="new-task" type="text" placeholder="Type a new task..." />
+      <div class="type"><input id="new-task" type="text" placeholder="Type a new task..." /></div>
       <div id="warning">Your task is blank! Please type something you want to do.</div>
     </script>
 

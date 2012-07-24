@@ -2,128 +2,107 @@ var express = require('express');
 var redis = require('node-redis').createClient();
 //var timelog = require('./time-log.js');
 
-var routes = function (app) {  
- 
-var io = app.settings.io; 
+var routes = function (app) {
 
-  
-   
-   function hget(err, obj) {
+  var io = app.settings.io;
 
-                var pies = [];
+  function hget(err, obj) {
 
-                if (obj === null) {
-                    req.flash('info', 'Error getting pie ...');
-                    res.redirect('/admin');
-                    return 0;
-                } else {
+    var pies = [];
 
-                    req.flash('info', 'Retrieving pie ' + id + ' ...');
-                    var pies = [];
-                    var pie = new Pie(id);
-                    pie = JSON.parse(obj);
+    if (obj === null) {
+      req.flash('info', 'Error getting pie ...');
+      res.redirect('/admin');
+      return 0;
+    } else {
 
-                    pies.push(pie);           
+      req.flash('info', 'Retrieving pie ' + id + ' ...');
+      var pies = [];
+      var pie = new Pie(id);
+      pie = JSON.parse(obj);
 
-                }
-                        res.render('pie', {
-                        title: 'View Pie',
-                        stylesheet: 'sidewalk',
-                        pies: pies
-                    });  
-            }
+      pies.push(pie);
 
-    
-        app.post('/timelog/api/tasks/:id', function (req, res) {
-             
-      
-           
-
-            var id = req.params.id;
-
-            var body = req.body;
-            body.id = id;
-  
-            var json = JSON.stringify(body);
-          
-           redis.hset('Task:development', id, json, function (err, code) {
-                if (err === null) io.sockets.emit('task:welcome', json + 'was saved ...');          
-            });
-         
-            res.send(json);         
-        });
-
-     
-        app.post('/timelog/api/tasks', function (req, res) {
-             
-      
-           var io = app.settings.io; 
-
-            var id = new Date().getTime();
-
-            var body = req.body;
-            body.id = id;
-  
-            var json = JSON.stringify(body);
-          
-           redis.hset('Task:development', id, json, function (err, code) {
-                if (err === null) io.sockets.emit('task:welcome', json + 'was saved ...');          
-            });
-         
-            res.send(json);         
-        });
-
-
-
-
-    app.get('/timelog', function (req, res) {           
-      res.sendfile(__dirname + '/index.html');
+    }
+    res.render('pie', {
+      title: 'View Pie',
+      stylesheet: 'sidewalk',
+      pies: pies
     });
-    app.get('/timelog/api/tasks/*', function (req, res) {           
-      res.send('ok');
+  }
+
+
+  app.post('/timelog/api/tasks/:id', function (req, res) {
+
+    var id = req.params.id;
+
+    var body = req.body;
+    body.id = id;
+
+    var json = JSON.stringify(body);
+
+    redis.hset('Task:development', id, json, function (err, code) {
+      if (err === null) io.sockets.emit('task:welcome', json + 'was saved ...');
     });
 
-    app.put('/timelog/api/tasks/:id', function (req, res) {  
-    
-   
-            var id = req.params.id;
-            var json = req.body.json;        
-            
-                       
-          function hset (err, code) {
-               if (err === null) {
-                   // var io = app.settings.io;
-                   //io.sockets.emit('pie:changed', pie);
-                }            
-            }
-
-                      
-        function hget(err, obj) {
-
-                if (obj === null) {
-                    req.flash('info', 'Error getting pie ...');
-                    res.redirect('/admin');
-                    return 0;
-                } 
-            }    
-                       pie.state = state;
-           pie.type = type;
-
-           //var json = JSON.stringify(pie);
-
-         
-            
-           //redis.hget('Pie:development', id, hget);
-              
-
-           //redis.hset('Pie:development', id, json, hset); 
-
-           res.send('ok');
+    res.send(json);
+  });
 
 
+  app.post('/timelog/api/tasks', function (req, res) {
 
+
+    var io = app.settings.io;
+
+    var id = new Date().getTime();
+
+    var body = req.body;
+    body.id = id;
+
+    var json = JSON.stringify(body);
+
+    redis.hset('Task:development', id, json, function (err, code) {
+      if (err === null) io.sockets.emit('task:welcome', json + 'was saved ...');
     });
-   
-  };
+
+    res.send(json);
+  });
+
+
+
+
+  app.get('/timelog', function (req, res) {
+    res.sendfile(__dirname + '/index.html');
+  });
+
+  app.get('/timelog/api/tasks/*', function (req, res) {
+     var id = req.params.id;
+    res.redirect('/timelog/');
+  }); 
+
+  app.put('/timelog/api/tasks/*', function (req, res) {
+    var id = req.params.id;
+    var json = req.body.json;
+
+    function hset(err, code) {
+      if (err === null) {
+        // var io = app.settings.io;
+        // io.sockets.emit('pie:changed', pie);
+      }
+    }
+
+    function hget(err, obj) {
+      if (obj === null) {
+        req.flash('info', 'Error getting pie ...');
+        res.redirect('/admin');
+        return 0;
+      }
+    }
+
+    res.send('ok');
+
+  });
+
+};
 
 module.exports = routes;
