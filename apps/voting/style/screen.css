@@ -1,0 +1,70 @@
+html, body {
+  height: 100%;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+#container {
+  height: auto;
+  min-height: 100%;
+	position: relative;
+}
+
+.albums {
+    list-style: none;
+    padding: 0 2%;
+}
+
+
+.album .artist-name {
+}
+
+.album .tracks {
+    margin: 0;
+    padding: .5em 0 0 1.5em;
+}
+
+.album button.queue {
+    position: absolute;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+div.questionaire {
+    margin: auto;
+    padding: 1;
+    border: 1px solid;
+}
+
+div button.vote {
+    text-indent: -9999px;
+    width: 55px;
+    height: 50px;
+    border: 0;
+    padding: 10px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+}
+div button.false {
+    background: url('/votingdevice/images/false.png') center no-repeat;
+}
+div button.true {
+    background: url('/votingdevice/images/true.png') center no-repeat;
+}
+
+.questionaire .text {
+    display: inline-block;
+    color: red;
+}
+
+/* vim:set sw=4:ts=4:expandtab */

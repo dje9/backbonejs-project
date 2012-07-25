@@ -1,0 +1,44 @@
+<!doctype html>
+
+<!--[if lt IE 7]> <html lang="en" class="no-js ie6"> <![endif]-->
+<!--[if IE 7]>    <html lang="en" class="no-js ie7"> <![endif]-->
+<!--[if IE 8]>    <html lang="en" class="no-js ie8"> <![endif]-->
+<!--[if IE 9]>    <html lang="en" class="no-js ie9"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html lang="en" class="no-js"> <!--<![endif]-->
+  <head>
+    <meta charset="utf-8">
+    <title>Voting Device</title>
+
+    <link rel="stylesheet" href="/voting/style/fancypants.css" media="screen, projection">
+    <link rel="stylesheet" href="/voting/style/screen.css" media="screen, projection">
+
+    <script type="text/template" id="voting-template">        
+      <ul class="tracks">
+        <% _.each(questions, function(question) { %>
+          <li><p class="text"><%= question.attributes.text %></p>
+            <input class="vote true" data-id="<%= question.attributes.id %>" data-value="true" type="radio" 
+              checked= "<%= question.isTrue() %>" name="<%= question.attributes.name %>">True
+            <input class="vote false" data-id="<%= question.attributes.id %>" data-value="false" type="radio"
+               checked= "<%= question.isFalse() %>" name="<%= question.attributes.name %>">False        
+          </li>     
+        <% }); %>
+      </ul>     
+      <button class="submit" type="submit">Submit</button>        
+    </script>  
+
+  </head>
+  <body>
+    <div id="container">
+    </div>
+    <script src="/js/modernizr-1.6.min.js"></script>
+    <script src="/js/jquery-1.5.1.min.js"></script>
+    <script src="/js/underscore.js"></script>
+    <script src="/js/backbone.js"></script>
+    <script src="/voting/device.js"></script>
+    <script type="application/javascript">
+      jQuery(function() {
+       // window.library.fetch();
+      });
+    </script>
+  </body>
+</html>

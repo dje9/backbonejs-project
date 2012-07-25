@@ -36,9 +36,9 @@ app.configure('test', function () {
 
 
 // Routes
-require('./apps/album/routes')(app);
-//require('./apps/timelog/routes')(app);
-require('./apps/voting-device/routes')(app);
+//require('./apps/album/routes')(app);
+require('./apps/timelog/routes')(app);
+require('./apps/voting/routes')(app);
 
 io.sockets.on('connection', function (socket) {
   //socket.emit('task:welcome', 'Welcome to task server');
