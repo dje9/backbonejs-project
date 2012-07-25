@@ -1,8 +1,8 @@
 /**
  * Module dependencies.
  */
-var express = require('express')
 
+var express = require('express')
 var app = module.exports = express.createServer();
 var io = require('socket.io').listen(app);
 
@@ -15,7 +15,6 @@ app.configure(function () {
   app.use(express.methodOverride());
   app.use(app.router);
   app.use(express.static(__dirname + '/public'));
-  app.use(express.static(__dirname + '/apps'));
 });
 
 app.configure('development', function () {
@@ -37,7 +36,7 @@ app.configure('test', function () {
 
 // Routes
 //require('./apps/album/routes')(app);
-require('./apps/timelog/routes')(app);
+//require('./apps/timelog/routes')(app);
 require('./apps/voting/routes')(app);
 
 io.sockets.on('connection', function (socket) {

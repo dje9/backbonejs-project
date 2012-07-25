@@ -1,10 +1,16 @@
-var Question = require('./question.js');
+var Question = require('./public/model/Question.js');
+var express = require('express');
 
 var routes = function (app) {
+  app.use(express.static(__dirname + '/public'));
+
   app.get('/votingdevice', function (req, res) {
-    res.redirect('/voting/index.html');
+    res.sendfile(__dirname + '/index.html');
   });
-  app.post('/questions', function (req, res) {
+  app.get('/votingdevice/test', function (req, res) {
+    res.sendfile(__dirname + '/SpecRunner.html');
+  });
+  app.post('/votingdevice/questions', function (req, res) {
     var body = req.body;
 
     var MAX_ID = 64000;
@@ -20,7 +26,7 @@ var routes = function (app) {
       question: q
     });
   });
-  app.post('/questions/:id', function (req, res) {
+  app.post('/votingdevice/questions/:id', function (req, res) {
     var id = req.params.id;
     var body = req.body;
 
