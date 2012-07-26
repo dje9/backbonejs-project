@@ -1,4 +1,4 @@
-var Question = require('./public/model/Question.js');
+var Question = require('./question.js');
 var express = require('express');
 
 var routes = function (app) {
@@ -8,12 +8,12 @@ var routes = function (app) {
     res.sendfile(__dirname + '/index.html');
   });
   app.get('/votingdevice/test', function (req, res) {
-    res.sendfile(__dirname + '/SpecRunner.html');
+    res.sendfile(__dirname + '/mocha-testrunner.html');
   });
   app.post('/votingdevice/questions', function (req, res) {
     var body = req.body;
 
-    var MAX_ID = 64000;
+    var MAX_ID = 128000;
     var id = Math.floor((MAX_ID * Math.random()) + 1);
     var name = 'q' + id;
     var q = new Question();
@@ -26,7 +26,7 @@ var routes = function (app) {
       question: q
     });
   });
-  app.post('/votingdevice/questions/:id', function (req, res) {
+  app.post('/votingdevice/question/:id', function (req, res) {
     var id = req.params.id;
     var body = req.body;
 
