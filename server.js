@@ -5,6 +5,7 @@
 var express = require('express')
 var app = module.exports = express.createServer();
 var io = require('socket.io').listen(app);
+var db = 
 
 // Configuration
 
@@ -38,11 +39,6 @@ app.configure('test', function () {
 //require('./apps/album/routes')(app);
 //require('./apps/timelog/routes')(app);
 require('./apps/voting/routes')(app);
-
-io.sockets.on('connection', function (socket) {
-  //socket.emit('task:welcome', 'Welcome to task server');
-});
-
 
 app.listen(app.settings.port, function () {
   console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);

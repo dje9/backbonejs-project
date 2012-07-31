@@ -9,22 +9,16 @@
     <meta charset="utf-8">
     <title>Voting Device</title>
 
-    <link rel="stylesheet" href="/style/fancypants.css" media="screen, projection">
-    <link rel="stylesheet" href="/style/screen.css" media="screen, projection">
+    <link rel="stylesheet" href="/style/voting.css" media="screen, projection">
 
-    <script type="text/template" id="voting-template">        
-      <ul class="tracks">
-        <% _.each(questions, function(question) { %>
-          <li><p class="text"><%= question.attributes.text %></p>
-            <input class="vote true" data-id="<%= question.attributes.id %>" data-value="true" type="radio" 
-              checked= "<%= question.isTrue() %>" name="<%= question.attributes.name %>">True
-            <input class="vote false" data-id="<%= question.attributes.id %>" data-value="false" type="radio"
-               checked= "<%= question.isFalse() %>" name="<%= question.attributes.name %>">False        
-          </li>     
-        <% }); %>
-      </ul>     
-      <button class="submit" type="submit">Submit</button>        
+    <script type="text/template" id="questions-template">        
     </script>  
+
+    <script type="text/template" id="question-template">         
+        <%= model.attributes.text %>
+        <input class="vote true" type="radio"  name="<%= model.attributes.name %>" data-id="<%= model.attributes.id %>" data-value="True">True
+        <input class="vote false" type="radio" name="<%= model.attributes.name %>" data-id="<%= model.attributes.id %>" data-value="False">False                  
+   </script>  
 
   </head>
   <body>
@@ -34,11 +28,13 @@
     <script src="/js/jquery-1.5.1.min.js"></script>
     <script src="/js/underscore.js"></script>
     <script src="/js/backbone.js"></script>
-    <script src="/votingdevice.js"></script>
+    <script src="/js/socket.io.min.js"></script>
     <script type="application/javascript">
-      jQuery(function() {
-       // window.library.fetch();
-      });
+        window.socket = io.connect('http://localhost:3000');
+          socket.on('event:welcome', function (data) {
+          alert('got message from server');
+        });   
     </script>
+    <script src="/votingdevice.js"></script>
   </body>
 </html>

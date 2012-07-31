@@ -1,6 +1,5 @@
 /*global window, _, $ */
-var backbone, VotingDeviceView, VotingDeviceRouter;
-
+var VotingDeviceView, VotingDeviceRouter;
 window.Question = window.Backbone.Model.extend({
   url: function () {
     var MAX_ID = 128000;
@@ -8,10 +7,6 @@ window.Question = window.Backbone.Model.extend({
       this.id = Math.floor((MAX_ID * Math.random()) + 1);
     }
     return '/votingdevice/question/' + this.id;
-  },
-  update: function (newValue) {
-    this.attributes.value = newValue; 
-    this.trigger('refresh');
   },
   isTrue: function () {
     return this.attributes.value === true;
@@ -24,61 +19,90 @@ window.Questions = window.Backbone.Collection.extend({
   model: window.Question,
   url: '/votingdevice/questions'
 });
-window.VotingDeviceView = window.Backbone.View.extend({
-  template: _.template($('#voting-template').html()),
-  tagName: 'div',
-  className: 'questionaire',
-  events: {
-    'click .submit': 'submit',
-    'click .vote': 'change'
-  },
+
+window.QuestionView = window.Backbone.View.extend({
+  template: _.template($('#question-template').html()),
+  tagName: 'li',
   initialize: function (options) {
-    this.questions = options;
-    _.bindAll(this, 'render', 'change', 'submit');
-    this.questions.bind('refresh', this.render);
+    this.model.bind('update', this.update);
+    this.model = options.model;
+    _.bindAll(this, 'render');
   },
-  submit: function (options) {
-    console.log('submit entered');
-    console.log(options);
-  },
-  change: function (e) {
-    var target, id, value, model;
-    target = e.currentTarget;
-    id = target.getAttribute('data-id');
-    value = target.getAttribute('data-value');
-    model = _.find(this.questions.models, function (model) {
-      return model.attributes.id === id;
-    });
-    model.update(value);
+  update: function () {
+    this.save(); // have the model save itself
   },
   render: function () {
-    var models, renderedContent;
-    models = this.questions.models;
+    var renderedContent;
     renderedContent = this.template({
-      questions: models
+      model: this.model
     });
     $(this.el).html(renderedContent);
     return this;
   }
+});
+window.QuestionListView = window.Backbone.View.extend({
+  template: _.template($('#questions-template').html()),
+  tagName: 'ol',
+  initialize: function (options) {
+    this.questions = options.questions;
+    this.questions.bind('add', this.render);
+  },
+  events: {
+    'click .vote': 'change'
+  },
+  render: function () {
+    var renderedContent;
+    renderedContent = this.template({
+      collection: this.questions.models
+    });
+    $(this.el).html(renderedContent);
+    var ol = $(this.el);
+    this.questions.each(function (model) {
+      var view = new QuestionView({
+        model: model
+      });
+      ol.append(view.render().el);
+    });
+    this.updateQuestion();
+    return this;
+  },
+  refresh: function (e) {
+    console.log(e);
+  },
+  change: function (e) {
+    var target, id, value, model;
+    target = e.currentTarget;
+    value = target.getAttribute('data-value');
+    id = target.getAttribute('data-id');
+    model = _.find(this.questions.models, function (model) {
+      return model.id == id; // === doesn't work apparently
+    });
+    model.attributes.value = value;
+    console.log(model);
+    model.trigger('update');
+  },
+  updateQuestion: function () {}
 });
 window.VotingDeviceRouter = window.Backbone.Router.extend({
   routes: {
     '': 'home'
   },
   initialize: function () {
-    this.questions = new window.Questions();
+    var qs = new window.Questions();
     var q = new window.Question({
       id: 3434,
       text: 'Are you a democrat',
       name: 'q12',
       value: true
     });
-    this.questions.add(q);
-    this.votingDeviceView = new window.VotingDeviceView(this.questions);
+    qs.add(q);
+    this.view = new window.QuestionListView({
+      questions: qs
+    });
   },
   home: function () {
     var container = $('#container');
-    container.html(this.votingDeviceView.render().el);
+    container.html(this.view.render().el);
   }
 });
 $(function () {

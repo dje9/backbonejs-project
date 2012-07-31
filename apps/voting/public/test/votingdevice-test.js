@@ -39,4 +39,17 @@ describe("Tests for Voting Device", function () {
       expect(q.isFalse()).to.be.eql(true);
     });
   });
+  describe("Questions", function () {    
+    it("checks length of #models after adding question", function () {
+      var q = new window.Question({
+        id: 3434,
+        text: 'Are you okay?',
+        name: 'q12',
+        value: true
+      });
+      var qs = new window.Questions();
+      qs.add(q);
+      expect(qs.models.length).to.be.eql(1);
+    });
+  });
 });
