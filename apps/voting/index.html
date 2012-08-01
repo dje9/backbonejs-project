@@ -11,13 +11,15 @@
 
     <link rel="stylesheet" href="/style/voting.css" media="screen, projection">
 
-    <script type="text/template" id="questions-template">        
+    <script  type="text/template" id="questions-template">        
+      
     </script>  
 
     <script type="text/template" id="question-template">         
-        <%= model.attributes.text %>
-        <input class="vote true" type="radio"  name="<%= model.attributes.name %>" data-id="<%= model.attributes.id %>" data-value="True">True
-        <input class="vote false" type="radio" name="<%= model.attributes.name %>" data-id="<%= model.attributes.id %>" data-value="False">False                  
+        <%= text %>
+        <input class="vote true" type="radio"  name="<%= name %>" data-id="<%= id %>" data-value="true">Yes
+        <input class="vote false" type="radio" name="<%= name %>" data-id="<%= id %>" data-value="false">No     
+     
    </script>  
 
   </head>
@@ -29,11 +31,15 @@
     <script src="/js/underscore.js"></script>
     <script src="/js/backbone.js"></script>
     <script src="/js/socket.io.min.js"></script>
+    
+    <script src="/js/backbone.iosync.js"></script>
+    <script src="/js/backbone.iobind.js"></script>   
+    
     <script type="application/javascript">
-        window.socket = io.connect('http://localhost:3000');
-          socket.on('event:welcome', function (data) {
-          alert('got message from server');
-        });   
+        /*window.socket = io.connect('http://localhost:3000');
+          window.socket.on('event:welcome', function (data) {
+          alert(data);
+        });*/   
     </script>
     <script src="/votingdevice.js"></script>
   </body>

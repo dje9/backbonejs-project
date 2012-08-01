@@ -3,17 +3,23 @@
  */
 
 var express = require('express')
-var app = module.exports = express.createServer();
-var io = require('socket.io').listen(app);
-var db = 
+var app = express.createServer();
+
+var io = require('socket.io');
+
+var MemoryStore = express.session.MemoryStore;
+var sessionStore = new MemoryStore();
 
 // Configuration
 
 app.configure(function () {
   app.set('port', 3000);
   app.set('io', io);
+  app.use(express.logger());
   app.use(express.bodyParser());
   app.use(express.methodOverride());
+  app.use(express.cookieParser());
+  app.use(express.session({store: sessionStore, secret: 'secret', key: 'express.sid'}));
   app.use(app.router);
   app.use(express.static(__dirname + '/public'));
 });

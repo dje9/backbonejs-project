@@ -1,111 +1,196 @@
-/*global window, _, $ */
+ /*global window, _, $ */
 var VotingDeviceView, VotingDeviceRouter;
-window.Question = window.Backbone.Model.extend({
-  url: function () {
-    var MAX_ID = 128000;
-    if (this.id === undefined || this.id === null) {
-      this.id = Math.floor((MAX_ID * Math.random()) + 1);
+
+window.socket = io.connect('http://localhost:3000');
+  window.socket.on('event:welcome', function (data) {
+  alert(data);
+  window.socket.emit('none', 'hell');
+});  
+
+window.Question = window.Backbone.Model.extend({    
+    defaults: {
+      id: function () {
+        var MAX_ID = 128000;
+        return Math.floor((MAX_ID * Math.random()) + 1);
+      },
+     name: 'q',
+     value: false,
+     text: 'default text'      
+    }, 
+    url: function () {
+        var MAX_ID = 128000;
+        if (this.id === undefined || this.id === null) {
+          this.id = Math.floor((MAX_ID * Math.random()) + 1);
+        }
+        return '/api/question/' + this.get('id');
+    },  
+    socket: window.socket,
+    validate: function(attribs){
+      if(attribs.text === undefined) {
+        return 'Please set a text for the question';
+      }
+    },
+    initialize: function () {
+      _.bindAll(this);
+      this.ioBind('update', socket, this.update, this);
+      this.ioBind('delete', socket, this.delete, this);
+      this.ioBind('create', socket, this.create, this);
+      this.ioBind('read', socket, this.read, this);
+
+      this.on('change:value', function () {
+        console.log('Model: value has changed: ' + this.get('value'))        
+      });      
+      this.on('change:text', function () {
+        console.log('Model: text has changed: ' + this.get('text'));      
+      });            
+      this.socket.on('question:updated', function () { 
+          console.log('question:updated');
+      });
+
+      console.log('model has been initialized');
+    },
+    setValue: function (newValue) {
+      if(newValue) {
+        console.log('Model: setting value');       
+        this.set({ value: newValue });
+        this.trigger('update');
+      }
+    },
+    setText: function (newText) {
+      if(newText) {
+        console.log('Model: setting text');
+        this.set({ text: newText });
+      }
+    },    
+    update: function () { 
+        console.log('Model: updating'); 
+        this.socket.emit('question:update', this);  
+    },
+    delete: function () {
+    },
+    create: function () {
+    },
+    read: function (data) {
+      socket.on('votingdevice:read', function (data) {
+        alert('im sending data' + data);
+      }); 
+      console.log('read');    
+    },
+    isTrue: function () {
+      return this.get('value') === true;
+    },
+    isFalse: function () {
+      return !this.get('value') === true;
     }
-    return '/votingdevice/question/' + this.id;
-  },
-  isTrue: function () {
-    return this.attributes.value === true;
-  },
-  isFalse: function () {
-    return !this.isTrue();
-  }
 });
+
 window.Questions = window.Backbone.Collection.extend({
   model: window.Question,
-  url: '/votingdevice/questions'
+  url: '/api/questions',
+  socket: window.socket,
+  initialize: function () {
+    _.bindAll(this);
+  }
 });
 
 window.QuestionView = window.Backbone.View.extend({
-  template: _.template($('#question-template').html()),
-  tagName: 'li',
-  initialize: function (options) {
-    this.model.bind('update', this.update);
-    this.model = options.model;
-    _.bindAll(this, 'render');
+  tagName:'li', 
+  template: _.template($('#question-template').html()), 
+  events: {
+    'click.vote': 'changeValue'
   },
-  update: function () {
-    this.save(); // have the model save itself
+  initialize: function () {
+    _.bindAll(this, 'render');
+    this.model.on('change', this.render);
+    this.model.on('destroy',this.remove);
+  },
+  remove: function () {
+  },
+  changeValue: function (event) {
+    var target, id, value, model;
+    target = event.target;
+    if(target) {
+      value = target.getAttribute('data-value');
+      id = target.getAttribute('data-id');
+      this.model.setValue(value);
+    }
+  },
+  changeText: function (event) {
+    var target, id, value, model;
+    target = event.target;
+    if(target) {
+      this.model.setText('New Text');
+    }
   },
   render: function () {
-    var renderedContent;
-    renderedContent = this.template({
-      model: this.model
-    });
-    $(this.el).html(renderedContent);
+    $(this.el).html(this.template(this.model.toJSON()));
     return this;
   }
 });
+
 window.QuestionListView = window.Backbone.View.extend({
-  template: _.template($('#questions-template').html()),
   tagName: 'ol',
-  initialize: function (options) {
-    this.questions = options.questions;
-    this.questions.bind('add', this.render);
-  },
-  events: {
-    'click .vote': 'change'
-  },
-  render: function () {
-    var renderedContent;
-    renderedContent = this.template({
-      collection: this.questions.models
+  initialize: function () {
+    _.bindAll(this, 'render');
+    this.collection.on('add', function (question) { 
+      console.log(question.id + ' added ');    
     });
-    $(this.el).html(renderedContent);
-    var ol = $(this.el);
-    this.questions.each(function (model) {
-      var view = new QuestionView({
-        model: model
+    this.collection.on('remove', function (question) { 
+      console.log(question.id + ' removed ');    
+    });
+    this.collection.on('change:value', function (question) { 
+      console.log('QuestionListView: ' + question.id + ' value has changed');    
+    });
+  },
+  render: function () {  
+    var collection = this.collection.toArray();    
+    var index;
+
+    for(index = 0; index < collection.length; index++) {
+      var view = new QuestionView({ 
+        model: collection[index] 
       });
-      ol.append(view.render().el);
-    });
-    this.updateQuestion();
+      $(this.el).append(view.render().el);
+    }
     return this;
-  },
-  refresh: function (e) {
-    console.log(e);
-  },
-  change: function (e) {
-    var target, id, value, model;
-    target = e.currentTarget;
-    value = target.getAttribute('data-value');
-    id = target.getAttribute('data-id');
-    model = _.find(this.questions.models, function (model) {
-      return model.id == id; // === doesn't work apparently
-    });
-    model.attributes.value = value;
-    console.log(model);
-    model.trigger('update');
-  },
-  updateQuestion: function () {}
+  }
 });
+
 window.VotingDeviceRouter = window.Backbone.Router.extend({
   routes: {
-    '': 'home'
+    '': 'home',
+    'question/:id': this.getQuestion,
   },
   initialize: function () {
-    var qs = new window.Questions();
-    var q = new window.Question({
-      id: 3434,
-      text: 'Are you a democrat',
-      name: 'q12',
-      value: true
-    });
-    qs.add(q);
+      var qs = new Questions();
+      var q1 = new window.Question({
+        id: 3434,
+        text: 'Are you a democrat',
+        name: 'q12',
+        value: true
+      });
+     var q2 = new window.Question({
+        id: 3464,
+        text: 'Are you a older than 70',
+        name: 'q14',
+        value: false
+      });
+    qs.add([q1, q2]);
     this.view = new window.QuestionListView({
-      questions: qs
+      collection: qs
     });
   },
   home: function () {
     var container = $('#container');
     container.html(this.view.render().el);
+  },
+  getQuestion: function (id) {
+    console.log('getting question');
   }
 });
+
 $(function () {
-  window.app = new window.VotingDeviceRouter();
-  window.Backbone.history.start(window.app);
+  var app = new VotingDeviceRouter();
+  window.Backbone.history.start();
+  app.navigate('');
 });

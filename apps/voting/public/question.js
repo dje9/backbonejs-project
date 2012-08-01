@@ -33,5 +33,34 @@ function Question() {
       }
     });
   }
+  this.get = function () {
+    var thisobj = this;
+    db.open(function (err, db) {
+      if (!err) {
+        console.log('connected');
+        db.collection('questions', function (err, collection) {
+          if (!err) {
+            console.log('collected');
+            var docs = {
+              id: thisobj.id,
+              text: thisobj.text,
+              value: thisobj.value,
+              name: thisobj.name
+            };
+            collection.insert(docs, function (err, result) {
+              if (err) {
+                console.log('insertion failed');
+              } else {
+                console.log('inserted');
+                console.log(docs);
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    return {};
+  }
 }
 module.exports = Question
